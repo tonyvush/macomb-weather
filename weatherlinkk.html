@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Macomb Township Weather (Davis VP2)</title>
+  <meta name="description" content="Live weather conditions for Macomb Township, MI." />
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#101a2f; --panel2:#0e1730;
+      --text:#eaf0ff; --muted:#aab7db; --accent:#69a7ff; --good:#59f2c0; --warn:#ffd36a;
+      --border: rgba(255,255,255,.08);
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans); background: radial-gradient(1200px 600px at 20% -10%, #1a2b5c 0%, transparent 60%),
+              radial-gradient(900px 500px at 90% 10%, #123f5c 0%, transparent 55%),
+              var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:22px}
+    header{
+      display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+      margin:10px 0 18px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+    }
+    .logo{
+      width:42px; height:42px; border-radius:12px;
+      background: linear-gradient(135deg, rgba(105,167,255,.95), rgba(89,242,192,.85));
+      box-shadow: var(--shadow);
+    }
+    h1{font-size:20px; margin:0; letter-spacing:.2px}
+    .sub{color:var(--muted); font-size:13px; margin-top:2px}
+    .pillrow{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .pill{
+      border:1px solid var(--border); background:rgba(255,255,255,.03);
+      padding:8px 10px; border-radius:999px; font-size:13px; color:var(--muted);
+    }
+    .pill b{color:var(--text); font-weight:650}
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:14px;
+    }
+    .card{
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 14px; background:rgba(255,255,255,.02);
+      border-bottom:1px solid var(--border);
+    }
+    .card .hd .t{font-size:13px; color:var(--muted); letter-spacing:.2px}
+    .card .bd{padding:14px}
+    .kpi{
+      display:grid; gap:12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .tile{
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.10);
+      border-radius:14px;
+      padding:12px 12px;
+    }
+    .tile .label{font-size:12px; color:var(--muted)}
+    .tile .val{font-size:26px; margin-top:4px; font-weight:750; letter-spacing:.2px}
+    .tile .unit{font-size:13px; color:var(--muted); margin-left:6px; font-weight:600}
+    .tile .meta{font-size:12px; color:var(--muted); margin-top:6px; font-family:var(--mono)}
+    .row2{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
+    .btn{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 12px; border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color:var(--text); text-decoration:none; font-size:13px;
+    }
+    .btn:hover{border-color: rgba(105,167,255,.45)}
+    .note{color:var(--muted); font-size:13px; line-height:1.45}
+    iframe{
+      width:100%; height:620px; border:0; display:block;
+      background: rgba(0,0,0,.12);
+    }
+    .span-7{grid-column: span 7}
+    .span-5{grid-column: span 5}
+    .span-12{grid-column: span 12}
+    @media (max-width: 920px){
+      .span-7,.span-5{grid-column: span 12}
+      .kpi{grid-template-columns:1fr}
+      iframe{height:680px}
+    }
+    .statusDot{
+      width:8px; height:8px; border-radius:99px; display:inline-block; margin-right:8px;
+      background: var(--warn);
+      box-shadow: 0 0 0 4px rgba(255,211,106,.15);
+    }
+    .ok .statusDot{
+      background: var(--good);
+      box-shadow: 0 0 0 4px rgba(89,242,192,.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Macomb Township Weather <span style="color:var(--muted); font-weight:650;">(Davis VP2)</span></h1>
+          <div class="sub">Macomb Township, Michigan • Updated automatically</div>
+        </div>
+      </div>
+
+      <div class="pillrow">
+        <div class="pill" id="statusPill"><span class="statusDot"></span><b id="statusText">Waiting for data…</b></div>
+        <div class="pill">Refresh: <b id="refreshText">120s</b></div>
+        <div class="pill">Last update: <b id="lastUpdate">—</b></div>
+      </div>
+    </header>
+
+    <div class="grid">
+
+      <!-- KPIs -->
+      <section class="card span-7">
+        <div class="hd">
+          <div class="t">Live Conditions</div>
+          <div class="t" style="font-family:var(--mono)" id="stationLabel">Source: WeatherLink</div>
+        </div>
+        <div class="bd">
+          <div class="kpi">
+            <div class="tile">
+              <div class="label">Temperature</div>
+              <div class="val"><span id="temp">—</span><span class="unit">°F</span></div>
+              <div class="meta">Feels like: <span id="feels">—</span>°F</div>
+            </div>
+
+            <div class="tile">
+              <div class="label">Dew Point</div>
+              <div class="val"><span id="dew">—</span><span class="unit">°F</span></div>
+              <div class="meta">Humidity: <span id="rh">—</span>%</div>
+            </div>
+
+            <div class="tile">
+              <div class="label">Wind</div>
+              <div class="val"><span id="wind">—</span><span class="unit">mph</span></div>
+              <div class="meta">Gust: <span id="gust">—</span> mph • Dir: <span id="wdir">—</span></div>
+            </div>
+
+            <div class="tile">
+              <div class="label">Rain</div>
+              <div class="val"><span id="rainToday">—</span><span class="unit">in</span></div>
+              <div class="meta">Rate: <span id="rainRate">—</span> in/hr</div>
+            </div>
+
+            <div class="tile">
+              <div class="label">Pressure</div>
+              <div class="val"><span id="pressure">—</span><span class="unit">inHg</span></div>
+              <div class="meta">Trend: <span id="ptrend">—</span></div>
+            </div>
+
+            <div class="tile">
+              <div class="label">Estimated Cloud Base</div>
+              <div class="val"><span id="cloudBase">—</span><span class="unit">ft</span></div>
+              <div class="meta">(Temp − Dew Point) × 222</div>
+            </div>
+          </div>
+
+          <div class="row2">
+            <a class="btn" id="wlBtn" href="#" target="_blank" rel="noopener">Open my WeatherLink station</a>
+            <a class="btn" id="radarBtn" href="https://radar.weather.gov/" target="_blank" rel="noopener">Radar</a>
+            <a class="btn" id="nwsBtn" href="https://forecast.weather.gov/" target="_blank" rel="noopener">NWS Forecast</a>
+          </div>
+
+          <p class="note" style="margin-top:12px;">
+            Tip: If the numbers stay as “—”, scroll to the bottom and follow the setup notes to plug in your WeatherLink link (and optionally an API/JSON source).
+          </p>
+        </div>
+      </section>
+
+      <!-- Right side info -->
+      <aside class="card span-5">
+        <div class="hd"><div class="t">Macomb Township Setup</div></div>
+        <div class="bd">
+          <p class="note">
+            This page can work two ways:
+          </p>
+          <ol class="note">
+            <li><b>Simple:</b> show your live station via the embedded WeatherLink page below.</li>
+            <li><b>Better:</b> pull your station data (JSON) every 2 minutes and fill the tiles above.</li>
+          </ol>
+          <p class="note">
+            If you want, tell me what your WeatherLink station page link is and I’ll wire the exact fields correctly.
+          </p>
+
+          <div class="tile" style="margin-top:12px;">
+            <div class="label">Refresh interval</div>
+            <div class="val"><span id="refreshVal">120</span><span class="unit">sec</span></div>
+            <div class="meta">Change it in the CONFIG section in the code.</div>
+          </div>
+
+          <div class="tile" style="margin-top:12px;">
+            <div class="label">Cloud base note</div>
+            <div class="meta">
+              This is an estimate from surface air: <br/>
+              <b>(Temp°F − Dew Point°F) × 222</b>. Airports may report higher ceilings because they report the lowest <i>broken/overcast</i> layer.
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Embedded WL -->
+      <section class="card span-12">
+        <div class="hd">
+          <div class="t">WeatherLink (embedded)</div>
+          <div class="t">If it doesn’t display, your browser may block embeds — you can still use the “Open my WeatherLink station” button.</div>
+        </div>
+        <iframe id="wlFrame" title="WeatherLink station"></iframe>
+      </section>
+
+    </div>
+  </div>
+
+  <script>
+    /******************************************************************
+     * CONFIG — EDIT THESE
+     ******************************************************************/
+    const CONFIG = {
+      // Paste your WeatherLink station page URL here (the one you already use):
+      // Example: "https://www.weatherlink.com/embeddablePage/show/XXXX"
+     WEATHERLINK_URL: "https://www.weatherlink.com/embeddablePage/show/e06b80a6b2df4700ab21b59e91b55c73/fullscreen",
+,
+
+      // Optional:
+      // If you have (or later get) a JSON endpoint you control (recommended),
+      // paste it here and the tiles will fill in automatically.
+      // Examples: a small JSON file on your site, or an API route.
+      JSON_URL: "",
+
+      // How often the page should refresh data (2 minutes = 120000 ms)
+      REFRESH_MS: 120000,
+
+      // Your location links (optional):
+      NWS_URL: "https://forecast.weather.gov/MapClick.php?lat=42.668&lon=-82.897",
+      RADAR_URL: "https://radar.weather.gov/",
+    };
+
+    /******************************************************************
+     * UI WIRING
+     ******************************************************************/
+    const $ = (id) => document.getElementById(id);
+
+    $("refreshVal").textContent = Math.round(CONFIG.REFRESH_MS / 1000);
+    $("refreshText").textContent = `${Math.round(CONFIG.REFRESH_MS / 1000)}s`;
+    $("radarBtn").href = CONFIG.RADAR_URL;
+    $("nwsBtn").href = CONFIG.NWS_URL;
+
+    // WeatherLink embed + button
+    if (CONFIG.WEATHERLINK_URL && !CONFIG.WEATHERLINK_URL.includes("PASTE_")) {
+      $("wlFrame").src = CONFIG.WEATHERLINK_URL;
+      $("wlBtn").href = CONFIG.WEATHERLINK_URL;
+    } else {
+      $("wlFrame").srcdoc = `
+        <div style="padding:18px; font-family: system-ui; color:#eaf0ff;">
+          <h3 style="margin:0 0 8px 0;">Paste your WeatherLink link</h3>
+          <p style="margin:0; color:#aab7db;">
+            Open this HTML file in a text editor and replace <b>WEATHERLINK_URL</b> in the CONFIG section.
+          </p>
+        </div>`;
+      $("wlBtn").href = "#";
+    }
+
+    function setStatus(ok, text){
+      const pill = $("statusPill");
+      pill.classList.toggle("ok", !!ok);
+      $("statusText").textContent = text;
+    }
+
+    function fmt1(x){ return (x === null || x === undefined || x === "") ? "—" : Number(x).toFixed(1); }
+    function fmt0(x){ return (x === null || x === undefined || x === "") ? "—" : Math.round(Number(x)).toString(); }
+
+    function updateCloudBase(tempF, dewF){
+      if (!isFinite(tempF) || !isFinite(dewF)) return;
+      const spread = tempF - dewF;
+      const cb = Math.max(0, Math.round(spread * 222)); // ft
+      $("cloudBase").textContent = cb.toLocaleString();
+    }
+
+    /******************************************************************
+     * DATA LOADING (OPTIONAL JSON)
+     * This expects a JSON object like:
+     * {
+     *   "temp_f": 15.4,
+     *   "feels_f": 12.0,
+     *   "dew_f": 11.0,
+     *   "rh": 82,
+     *   "wind_mph": 7.1,
+     *   "gust_mph": 12.3,
+     *   "wdir": "NW",
+     *   "rain_today_in": 0.02,
+     *   "rain_rate_inph": 0.00,
+     *   "pressure_inhg": 29.92,
+     *   "pressure_trend": "Rising",
+     *   "timestamp": "2026-01-18T23:10:00-05:00"
+     * }
+     ******************************************************************/
+    async function loadJSON(){
+      if (!CONFIG.JSON_URL) {
+        // No JSON source; user can still use the embed and link.
+        setStatus(false, "Showing WeatherLink (no tile feed set)");
+        return;
+      }
+
+      try{
+        const res = await fetch(CONFIG.JSON_URL + (CONFIG.JSON_URL.includes("?") ? "&" : "?") + "t=" + Date.now(), {
+          cache: "no-store"
+        });
+        if(!res.ok) throw new Error("HTTP " + res.status);
+        const j = await res.json();
+
+        $("temp").textContent = fmt1(j.temp_f);
+        $("feels").textContent = fmt1(j.feels_f);
+        $("dew").textContent = fmt1(j.dew_f);
+        $("rh").textContent = fmt0(j.rh);
+
+        $("wind").textContent = fmt1(j.wind_mph);
+        $("gust").textContent = fmt1(j.gust_mph);
+        $("wdir").textContent = (j.wdir ?? "—");
+
+        $("rainToday").textContent = fmt2(j.rain_today_in);
+        $("rainRate").textContent = fmt2(j.rain_rate_inph);
+
+        $("pressure").textContent = fmt2(j.pressure_inhg);
+        $("ptrend").textContent = (j.pressure_trend ?? "—");
+
+        const tempF = Number(j.temp_f);
+        const dewF  = Number(j.dew_f);
+        updateCloudBase(tempF, dewF);
+
+        $("lastUpdate").textContent = (j.timestamp ? new Date(j.timestamp).toLocaleString() : new Date().toLocaleString());
+        setStatus(true, "Live tiles running");
+      }catch(e){
+        console.error(e);
+        setStatus(false, "Tile feed error (still showing WeatherLink)");
+        $("lastUpdate").textContent = new Date().toLocaleString();
+      }
+    }
+
+    function fmt2(x){ return (x === null || x === undefined || x === "") ? "—" : Number(x).toFixed(2); }
+
+    // Initial + interval refresh
+    loadJSON();
+    setInterval(loadJSON, CONFIG.REFRESH_MS);
+  </script>
+</body>
+</html>
